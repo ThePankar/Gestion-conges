@@ -1,73 +1,45 @@
-# Gestion-conges
+Leave-Management
+
 Free leave manager via Google Sheets. Track vacation/RTT, interactive calendar, and smart optimization of long weekends. Web App installable on mobile.
 
-📅 Gestionnaire de Congés & RTT
-Application web gratuite et open-source pour gérer ses congés, RTT et optimiser ses ponts via Google Sheets.
+📅 Leave & RTT ManagerFree and open-source web application to manage leave, RTT, and optimize long weekends via Google Sheets.
 
-Aperçu de l'application(Conseil : Remplace ce lien par une capture d'écran réelle de ton application hébergée sur un site d'image comme Imgur)
+Application Preview (Tip: Replace this link with a real screenshot of your application hosted on an image site like Imgur)
 
-✨ Fonctionnalités
-📊 Tableau de bord visuel : Suivi en temps réel des soldes CP et RTT avec des graphiques circulaires (Donuts).
+✨ Features📊 Visual Dashboard: Real-time tracking of Paid Leave (CP) and RTT balances with donut charts.
 
-🗓️ Calendrier interactif : Vue mensuelle et annuelle avec affichage des jours fériés, weekends et congés posés.
+🗓️ Interactive Calendar: Monthly and yearly views with display of public holidays, weekends, and taken leave.
 
-🚀 Optimisation intelligente :
-Détection automatique des "Ponts" (ex: férié un jeudi -> poser le vendredi).
-Calcul des meilleures périodes pour poser N jours et maximiser le temps de repos.
+🚀 Smart Optimization:Automatic "Bridge Day" detection (e.g., if a holiday is on a Thursday -> suggest taking Friday off).Calculation of the best periods to take N days off and maximize rest time.
 
-⚡ Ultra Rapide : Les calculs d'optimisation se font localement dans le navigateur (pas de temps de chargement).
+⚡ Ultra Fast: Optimization calculations are done locally in the browser (no loading time).
 
-📱 Mode Application (PWA) : Installe-le sur ton smartphone (iOS/Android) pour l'utiliser comme une vraie appli hors-ligne.
+📱 App Mode (PWA): Install it on your smartphone (iOS/Android) to use it like a real offline app.
 
-🔒 100% Privé : Toutes les données sont stockées dans ton propre Google Drive (Google Sheets). Aucun serveur externe.
+🔒 100% Private: All data is stored in your own Google Drive (Google Sheets). No external server.
 
-🛠️ Technologies utilisées
-Backend : Google Apps Script (serveur gratuit intégré à Google).
-Base de données : Google Sheets.
-Frontend : HTML5, CSS3 (Vanilla), JavaScript (ES6).
-Graphiques : SVG natif (pas de librairie lourde).
+🛠️ Technologies UsedBackend: Google Apps Script (free server integrated with Google).Database: Google Sheets.Frontend: HTML5, CSS3 (Vanilla), JavaScript (ES6).Charts: Native SVG (no heavy libraries).
 
-🚀 Installation (Guide détaillé)
-Comme l'application utilise ton Google Drive comme base de données, tu dois en créer une copie pour toi.
+🚀 Installation (Detailed Guide)Since the application uses your Google Drive as a database, you need to create a copy for yourself.
 
-Étape 1 : Préparer le Google Sheet
-Va sur Google Sheets et crée un nouveau tableau vide.
-Nomme-le Gestion Congés (ou comme tu préfères).
+Step 1: Prepare the Google SheetGo to Google Sheets and create a new empty spreadsheet.Name it "Leave Management" (or whatever you prefer).
 
-Étape 2 : Ouvrir l'éditeur de script
-Dans ton tableau, va dans le menu Extensions > Apps Script.
-Un nouvel onglet s'ouvre. C'est l'éditeur de code.
+Step 2: Open the Script EditorIn your spreadsheet, go to Extensions > Apps Script.A new tab will open. This is the code editor.
 
-Étape 3 : Copier le code
-Dans l'éditeur, tu verras un fichier nommé Code.gs. Remplace tout son contenu par le code du fichier Code.gs présent dans ce dépôt GitHub.
-Clique sur le + (à gauche, près de "Fichiers") > HTML. Nomme le fichier Index (sans le .html).
-Remplace tout le contenu de ce fichier par le code du fichier Index.html présent dans ce dépôt.
+Step 3: Copy the CodeIn the editor, you will see a file named Code.gs. Replace all its content with the code from the Code.gs file in this GitHub repository.Click the + (on the left, near "Files") > HTML. Name the file Index (without the .html).Replace all the content of this file with the code from the Index.html file in this repository.
 
-Étape 4 : Déployer l'application
-Dans l'éditeur Apps Script, clique sur Déployer (en haut à droite) > Nouveau déploiement.
-Clique sur l'icône ⚙️ > Application Web.
-Description : Version 1.
-Exécuter en tant que : Moi.
-Qui a accès : Tout le monde (si tu veux y accéder depuis n'importe où) ou Moi uniquement.
-Clique sur Déployer.
+Step 4: Deploy the ApplicationIn the Apps Script editor, click Deploy (top right) > New deployment.Click the ⚙️ icon > Web app.Description: Version 1.Execute as: Me.Who has access: Anyone (if you want to access it from anywhere) or Me only.Click Deploy.
 
-Étape 5 : Autoriser l'accès
-Google va te demander d'autoriser le script.
-Clique sur "Autoriser".
-Si Google te dit que l'application n'est pas vérifiée (c'est normal, c'est ton propre code), clique sur Avancé > Accéder à Gestion Congés (non sécurisé) > Autoriser.
+Step 5: Authorize AccessGoogle will ask you to authorize the script.Click "Authorize".If Google tells you the app is unverified (this is normal, it's your own code), click Advanced > Go to Leave Management (unsafe) > Authorize.
 
-Étape 6 : C'est prêt !
-Tu obtiendras une URL. Copie-la et ouvre-la dans ton navigateur. L'application va initialiser les feuilles automatiquement.
+Step 6: Ready to Go!You will get a URL. Copy it and open it in your browser. The application will initialize the sheets automatically.
 
-📱 Installation sur Smartphone
-Pour utiliser l'appli comme une vraie application native :
+📱 Smartphone InstallationTo use the app like a real native application:
 
-Ouvre l'URL de ton application sur ton téléphone.
-Sur iPhone (Safari) : Appuie sur le bouton Partager > "Sur l'écran d'accueil".
+Open your application URL on your phone.On iPhone (Safari): Press the Share button > "Add to Home Screen".
 
-Sur Android (Chrome) : Appuie sur le menu (3 points) > "Ajouter à l'écran d'accueil".
+On Android (Chrome): Press the menu (3 dots) > "Add to Home Screen".
 
-⚙️ Configuration
-Tu peux ajuster les constantes dans le fichier Code.gs :
+⚙️ ConfigurationYou can adjust constants in the Code.gs file:
 
-const CONFIG = {  ANNEE_BASE_CP: 25, // Nombre de CP de base par an  FORFAIT_JOURS: 218 // Nombre de jours travaillés dans l'année};
+const CONFIG = { ANNEE_BASE_CP: 25, // Base number of paid leave days per year FORFAIT_JOURS: 218 // Number of working days in the year};
