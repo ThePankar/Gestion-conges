@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <!-- Balises pour transformer en Web App (PWA) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#f0f2f5">
+  
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Roboto", sans-serif; margin: 0; background: #f0f2f5; color: #333; }
+    .container { padding: 15px; padding-bottom: 80px; max-width: 600px; margin: 0 auto; }
+    
+    /* Loader */
+    #init-loader { position: fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #1a73e8; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Tabs */
+    .tabs { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+    .tab-btn { background: none; border: none; font-size: 12px; color: #666; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+    .tab-btn.active { color: #1a73e8; font-weight: bold; }
+    .icon { font-size: 24px; margin-bottom: 4px; }
+
+    /* Charts Wrapper */
+    .charts-wrapper { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 10px; }
+    
+    /* Header Layout */
+    .charts-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .nav-arrow { background: none; border: none; font-size: 24px; color: #1a73e8; cursor: pointer; padding: 0 10px; }
+    .nav-arrow:disabled { color: #ccc; }
+    .year-title { font-size: 16px; font-weight: bold; color: #333; text-align: center; flex: 1; }
+    .header-right-group { display: flex; align-items: center; gap: 5px; }
+    
+    .settings-btn { background: #f0f2f5; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; color: #666; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+    .settings-btn:hover { background: #e0e0e0; color: #333; }
+    
+    /* Layout 3 Colonnes */
+    .charts-container { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    
+    /* SVG Donut */
+    .donut-card { text-align: center; width: 33%; }
+    .donut-svg { width: 100%; max-width: 110px; height: auto; }
+    
+    .donut-ring { fill: none; stroke: #eee; stroke-width: 3; }
+    .donut-segment-cp { fill: none; stroke: #4285f4; stroke-linecap: round; stroke-width: 3; }
+    .donut-segment-rtt { fill: none; stroke: #fbbc05; stroke-linecap: round; stroke-width: 3; }
+    
+    .evolution-bg-green { fill: none; stroke: #e8f5e9; stroke-width: 3; }
+    .evolution-bg-red { fill: none; stroke: #ffebee; stroke-width: 3; }
+    .evolution-segment-green { fill: none; stroke: #66bb6a; stroke-linecap: round; stroke-width: 3; }
+    .evolution-segment-red { fill: none; stroke: #ef5350; stroke-linecap: round; stroke-width: 3; }
+    
+    .donut-text { fill: #333; font-size: 4.5px; font-weight: bold; text-anchor: middle; dominant-baseline: middle; }
+    .donut-text-small { fill: #666; font-size: 3.5px; text-anchor: middle; dominant-baseline: middle; }
+    
+    .warning-box { background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 15px; border-left: 4px solid #ffc107; display:none; }
+    
+    .view-switch { display: flex; background: white; border-radius: 10px; padding: 5px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .switch-btn { flex: 1; border: none; background: transparent; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; color: #666; }
+    .switch-btn.active { background: #1a73e8; color: white; }
+
+    /* Calendar */
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .calendar-nav { background: none; border: 1px solid #ddd; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #fff; border-radius: 10px; overflow: hidden; }
+    .day-name { background: #f8f9fa; font-size: 10px; font-weight: bold; padding: 5px; text-align: center; color: #888; }
+    .day-cell { background: #fff; height: 50px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 12px; position: relative; border: 1px solid #f9f9f9; cursor: pointer; }
+    .day-cell:hover { background: #f0f7ff; }
+    .today { border: 2px solid #1a73e8; font-weight: bold; }
+    .weekend { background: #f5f5f5; color: #ccc; }
+    .ferie { color: #d32f2f; font-weight: bold; background: #ffebee; }
+    
+    .dot-container { position: absolute; bottom: 5px; display: flex; gap: 2px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; }
+    
+    .dot.cp { background: #4285f4; }
+    .dot.rtt { background: #fbbc05; }
+    .dot.css { background: #ef5350; }
+    .dot.am { background: #78909c; }
+    .dot.cex { background: #ab47bc; }
+    .dot.abs { background: #5d4037; }
+    .dot.mixte { background: #26a69a; }
+    
+    .year-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-top: 10px; }
+    .month-mini { background: white; padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid #eee; }
+    .month-mini:hover { transform: translateY(-2px); }
+    .month-name { font-weight: bold; margin-bottom: 5px; font-size: 12px; }
+
+    /* Modals */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+    .modal-content { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; max-height: 80vh; overflow-y: auto; }
+    .btn-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .btn-type { padding: 10px; border-radius: 8px; border: 1px solid #eee; background: #f8f9fa; cursor: pointer; font-size: 13px; color: #333; }
+    .btn-type:hover { background: #e9ecef; }
+    .btn-type.main { background: #1a73e8; color: white; border: none; }
+    .btn-type.success { background: #34a853; color: white; border: none; }
+    .btn-type.danger { background: #dc3545; color: white; border: none; }
+    .btn-opt { background: #34a853; color: white; border: none; padding: 12px; width: 100%; margin-top: 5px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    
+    input[type="date"], input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; text-align: center; box-sizing: border-box; }
+    
+    .edit-info { background: #e3f2fd; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; color: #0d47a1; }
+    .edit-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
+    .edit-btn-group { display: flex; gap: 8px; }
+    .edit-btn-group button { flex: 1; padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
+    .stars { color: #fbbc05; font-size: 14px; letter-spacing: 2px; }
+    
+    .input-group { text-align: left; margin-bottom: 10px; }
+    .input-group label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- Loader -->
+<div id="init-loader">
+  <div class="spinner"></div>
+  <p style="color:#666; margin-top:15px;">Chargement des congés...</p>
+</div>
+
+<!-- Page Accueil -->
+<div id="page-home" class="container" style="display:none;">
+  <h2 style="margin-top:0">📊 Mes Congés</h2>
+  <div class="charts-wrapper">
+    <div class="charts-header">
+      <button id="nav-left" class="nav-arrow" onclick="changeYearView(-1)">‹</button>
+      <div id="year-title" class="year-title">Chargement...</div>
+      <div class="header-right-group">
+        <button id="nav-right" class="nav-arrow" onclick="changeYearView(1)">›</button>
+        <button class="settings-btn" onclick="openSettingsModal()" title="Réglages manuels">⚙️</button>
+      </div>
+    </div>
+    <div class="charts-container" id="main-charts"></div>
+  </div>
+  <div id="warning-cp" class="warning-box"></div>
+  <div class="view-switch">
+    <button id="btn-month" class="switch-btn active" onclick="setView('month')">Vue Mois</button>
+    <button id="btn-year" class="switch-btn" onclick="setView('year')">Vue Annuelle</button>
+  </div>
+  <div id="calendar-container"></div>
+  <button class="btn-opt" onclick="openAddMode()" style="margin-top: 20px;">📅 Planifier une période</button>
+</div>
+
+<!-- Page Optimisation -->
+<div id="page-opt" class="container" style="display:none;">
+  <h2 style="margin-top:0">🚀 Optimisation</h2>
+  <div class="opt-selector">
+    <label>Choisir le mode :</label>
+    <div style="display:flex; gap:10px; margin-bottom:10px;">
+      <button id="mode-auto" style="flex:1; background:#e8f0fe; color:#1a73e8; border:none; padding:10px; border-radius:8px; font-weight:bold;" onclick="setOptMode('auto')">Maximiser les ponts</button>
+      <button id="mode-jours" style="flex:1; background:#f0f2f5; color:#666; border:none; padding:10px; border-radius:8px;" onclick="setOptMode('jours')">Planifier N jours</button>
+    </div>
+    <div id="jours-input-zone" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:15px;">
+      <label>Combien de CP/RTT veux-tu poser ?</label>
+      <div style="display:flex; align-items:center;">
+        <input type="number" id="input-nb-jours" min="1" max="30" value="5" style="padding:8px; border:1px solid #ddd; border-radius:5px; width:60px;">
+        <button onclick="runLocalOptim()" style="background:#1a73e8; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; margin-left:10px;">Calculer</button>
+      </div>
+    </div>
+  </div>
+  <div id="optList"></div>
+</div>
+
+<!-- Modal Ajout -->
+<div id="addModal" class="modal">
+  <div class="modal-content">
+    <h3 id="modal-title">Poser un congé</h3>
+    <div id="edit-info-box" class="edit-info" style="display:none;"><div>Congé existant :</div><strong id="edit-type-display"></strong></div>
+    <div style="margin-bottom:15px;">
+        <label style="font-size:12px; color:#666; display:block; text-align:left; margin-bottom:5px;">Début</label>
+        <input type="date" id="dateInput" onchange="updateDateDisplay()">
+        <label style="font-size:12px; color:#666; display:block; text-align:left; margin-bottom:5px; margin-top:5px;">Fin</label>
+        <input type="date" id="endDateInput" onchange="updateDateDisplay()">
+    </div>
+    <p id="date-summary" style="font-size:13px; color:#666; margin-top:0; font-style:italic;"></p>
+    <input type="hidden" id="editIdInput">
+    <div id="dynamic-content">
+        <div id="add-view" class="btn-type-grid">
+          <button class="btn-type main" onclick="saveConge('CP')">CP</button>
+          <button class="btn-type main" onclick="saveConge('RTT')">RTT</button>
+          <button class="btn-type secondary" onclick="saveConge('0.5 CP')">0.5 CP</button>
+          <button class="btn-type secondary" onclick="saveConge('0.5 RTT')">0.5 RTT</button>
+          <button class="btn-type" onclick="saveConge('CSS')">CSS</button>
+          <button class="btn-type" onclick="saveConge('0.5 CSS')">0.5 CSS</button>
+          <button class="btn-type" onclick="saveConge('AM')">AM</button>
+          <button class="btn-type" onclick="saveConge('CEX')">CEX</button>
+          <button class="btn-type" onclick="saveConge('ABS1')">ABS1</button>
+          <button class="btn-type" onclick="saveConge('ABS2')">ABS2</button>
+          <button class="btn-type" onclick="saveConge('0.5 CP+0.5 JNT')">Mixte</button>
+        </div>
+        <div id="edit-view" style="display:none;" class="edit-actions">
+            <button class="btn-type danger" style="padding:12px;" onclick="deleteConge()">🗑️ Supprimer</button>
+            <div class="edit-btn-group">
+                <button style="background:#f0f2f5; color:#666;" onclick="closeModal()">Annuler</button>
+                <button class="btn-type main" onclick="showModifyOptions()">Modifier</button>
+            </div>
+        </div>
+    </div>
+    <button onclick="closeModal()" style="background:none; color:#999; margin-top:15px; border:none; width:100%;">Fermer</button>
+  </div>
+</div>
+
+<!-- Modal Réglages -->
+<div id="settingsModal" class="modal">
+  <div class="modal-content">
+    <h3>⚙️ Réglage des Soldes</h3>
+    <p style="font-size:13px; color:#666; margin-top:0;">Ajuste tes droits acquis selon ta fiche de paie.</p>
+    
+    <div class="input-group">
+      <label>CP Acquis (Année en cours)</label>
+      <input type="number" id="input-cp-acquis" step="0.5" placeholder="25">
+    </div>
+    
+    <div class="input-group">
+      <label>RTT Acquis (Année en cours)</label>
+      <input type="number" id="input-rtt-acquis" step="0.5" placeholder="9">
+    </div>
+
+    <button class="btn-type success" style="margin-top:10px; width:100%;" onclick="saveSettings()">Sauvegarder</button>
+    <button onclick="closeSettingsModal()" style="background:none; color:#999; margin-top:10px; border:none; width:100%;">Annuler</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showPage('home')"><span class="icon">📅</span> Calendrier</button>
+  <button class="tab-btn" onclick="showPage('opt')"><span class="icon">⚡</span> Optimiser</button>
+</div>
+
+<script>
+  const LEGAL_CP_TOTAL = 25;
+  const RADIUS = 15.9155;
+  const CIRC = 2 * Math.PI * RADIUS;
+  const PATH_D = "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831";
+
+  let allData = {}; let currentView = 'month'; let currentDate = new Date(); let currentOptMode = 'auto'; let viewedYear = new Date().getFullYear();
+  let localIsWeekend = {}; let localIsFerie = {}; let localIsConge = {};
+
+  document.addEventListener('DOMContentLoaded', loadAllData);
+
+  function loadAllData() {
+    google.script.run.withSuccessHandler(function(data) {
+      if(data && data.error) { alert("Erreur : " + data.message); document.getElementById('init-loader').innerHTML = "<p style='color:red'>Erreur de chargement</p>"; return; }
+      allData = data || {}; viewedYear = allData.annee || new Date().getFullYear(); currentDate = new Date(viewedYear, new Date().getMonth(), 1);
+      allData.feriesMap = {}; 
+      if(data.feries) data.feries.forEach(f => { allData.feriesMap[f.date] = f.nom; localIsFerie[f.date] = true; });
+      allData.congesMap = {};
+      localIsConge = {}; localIsWeekend = {};
+      if(data.conges) data.conges.forEach(c => {
+        const start = new Date(c.debut + 'T00:00:00'); const end = new Date((c.fin || c.debut) + 'T00:00:00'); let currentLoop = new Date(start);
+        while(currentLoop <= end) {
+          const loopStr = currentLoop.getFullYear() + '-' + String(currentLoop.getMonth() + 1).padStart(2, '0') + '-' + String(currentLoop.getDate()).padStart(2, '0');
+          if(currentLoop.getDay() !== 0 && currentLoop.getDay() !== 6 && !allData.feriesMap[loopStr]) { allData.congesMap[loopStr] = c; localIsConge[loopStr] = true; }
+          currentLoop.setDate(currentLoop.getDate() + 1);
+        }
+      });
+      updateUI();
+      document.getElementById('input-nb-jours').value = (data.cp.reste || 0) + (data.rtt.reste || 0);
+      document.getElementById('init-loader').style.display = 'none';
+      document.getElementById('page-home').style.display = 'block';
+      runLocalOptim(); 
+    }).getDonnees();
+  }
+
+  function updateUI() { renderCharts(); renderView(); updateNavArrows(); checkCPWarning(); }
+
+  function renderCharts() {
+    const container = document.getElementById('main-charts'); const title = document.getElementById('year-title'); title.innerText = viewedYear;
+    let cp = { acquis: 0, reste: 0 }; let rtt = { acquis: 0, reste: 0 };
+    if(viewedYear === allData.annee) { cp = allData.cp || {}; rtt = allData.rtt || {}; }
+    else if (allData.projection && viewedYear === allData.projection.annee) { cp = allData.projection.cp || {}; rtt = allData.projection.rtt || {}; }
+    const totalCP = LEGAL_CP_TOTAL; const resteCP = cp.reste || 0;
+    const percentCP = totalCP > 0 ? Math.min(100, (resteCP / totalCP) * 100) : 0; 
+    const today = new Date(); let balance = 0; let balanceColor = '#666';
+    if (viewedYear === today.getFullYear()) {
+        const monthIndex = today.getMonth() + 1; const generatedRights = (LEGAL_CP_TOTAL / 12) * monthIndex; const cpAcquis = cp.acquis || 25;
+        const totalPris = cpAcquis - resteCP; const report = Math.max(0, cpAcquis - LEGAL_CP_TOTAL);
+        let prisSurDroitsNouveaux = Math.max(0, totalPris - report); balance = generatedRights - prisSurDroitsNouveaux;
+        balanceColor = balance < 0 ? '#d32f2f' : '#388e3c';
+    }
+    const totalRTT = rtt.acquis || 10; const resteRTT = rtt.reste || 0;
+    const percentRTT = totalRTT > 0 ? Math.min(100, (resteRTT / totalRTT) * 100) : 0;
+    container.innerHTML = `
+      <div class="donut-card"><svg class="donut-svg" viewBox="0 0 36 36"><path class="donut-ring" d="${PATH_D}"/><path class="donut-segment-cp" stroke-dasharray="${CIRC} ${CIRC}" stroke-dashoffset="${CIRC - (percentCP / 100) * CIRC}" d="${PATH_D}"/><text x="18" y="18" class="donut-text">${resteCP.toFixed(1)} / ${totalCP}</text><text x="18" y="24" class="donut-text-small">CP Restant</text></svg></div>
+      <div class="donut-card"><svg class="donut-svg" viewBox="0 0 36 36"><path class="evolution-bg-green" d="M 18 2.08 A 15.91 15.91 0 0 1 18 33.91" /><path class="evolution-bg-red" d="M 18 2.08 A 15.91 15.91 0 0 0 18 33.91" />${renderEvolutionDonut(balance)}<text x="18" y="18" class="donut-text" style="fill:${balanceColor}">${balance >= 0 ? '+' : ''}${balance.toFixed(1)}</text><text x="18" y="24" class="donut-text-small">Evolution</text></svg></div>
+      <div class="donut-card"><svg class="donut-svg" viewBox="0 0 36 36"><path class="donut-ring" d="${PATH_D}"/><path class="donut-segment-rtt" stroke-dasharray="${CIRC} ${CIRC}" stroke-dashoffset="${CIRC - (percentRTT / 100) * CIRC}" d="${PATH_D}"/><text x="18" y="18" class="donut-text">${resteRTT.toFixed(1)} / ${totalRTT}</text><text x="18" y="24" class="donut-text-small">RTT</text></svg></div>`;
+  }
+  function renderEvolutionDonut(bal) { if(bal >= 0) { const len = Math.min(bal * 2, 50); return `<path class="evolution-segment-green" stroke-dasharray="${len} 100" d="M 18 2.08 A 15.91 15.91 0 0 1 18 33.91" />`; } else { const len = Math.min(Math.abs(bal) * 2, 50); return `<path class="evolution-segment-red" stroke-dasharray="${len} 100" d="M 18 2.08 A 15.91 15.91 0 0 0 18 33.91" />`; } }
+  function checkCPWarning() { const warningBox = document.getElementById('warning-cp'); let cpData = null; if (viewedYear === allData.annee) cpData = allData.cp; else if (allData.projection && viewedYear === allData.projection.annee) cpData = allData.projection.cp; const cpRestant = cpData ? (cpData.reste || 0) : 0; const joursAReport = cpRestant - LEGAL_CP_TOTAL; warningBox.style.display = 'none'; if(joursAReport > 0) { warningBox.style.display = 'block'; warningBox.innerHTML = `<strong>⚠️ Attention :</strong> Report de <strong>${joursAReport.toFixed(1)} jours</strong> à poser avant le <strong>31 mars ${viewedYear}</strong>.`; } }
+  function changeYearView(delta) { const maxYear = allData.projection ? allData.projection.annee : allData.annee; if(delta > 0 && viewedYear < maxYear) viewedYear++; else if(delta < 0 && viewedYear > allData.annee) viewedYear--; updateUI(); }
+  function updateNavArrows() { const maxYear = allData.projection ? allData.projection.annee : allData.annee; document.getElementById('nav-left').disabled = (viewedYear <= allData.annee); document.getElementById('nav-right').disabled = (viewedYear >= maxYear); }
+  function setView(view) { currentView = view; document.getElementById('btn-month').classList.toggle('active', view === 'month'); document.getElementById('btn-year').classList.toggle('active', view === 'year'); renderView(); }
+  function renderView() { if (currentView === 'month') renderMonthView(); else renderYearView(); }
+  function renderMonthView() { if(currentDate.getFullYear() !== viewedYear) currentDate.setFullYear(viewedYear); const container = document.getElementById('calendar-container'); const year = currentDate.getFullYear(); const month = currentDate.getMonth(); const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]; let html = `<div class="calendar-header"><button class="calendar-nav" onclick="changeMonth(-1)">‹</button><h3 style="margin:0">${months[month]} ${year}</h3><button class="calendar-nav" onclick="changeMonth(1)">›</button></div><div class="calendar-grid"><div class="day-name">Lun</div><div class="day-name">Mar</div><div class="day-name">Mer</div><div class="day-name">Jeu</div><div class="day-name">Ven</div><div class="day-name">Sam</div><div class="day-name">Dim</div>`; const firstDay = new Date(year, month, 1); const lastDay = new Date(year, month + 1, 0); const startOffset = (firstDay.getDay() + 6) % 7; const today = new Date(); const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0'); for(let i=0; i<startOffset; i++) html += '<div class="day-cell" style="background:#fafafa"></div>'; for(let day=1; day<=lastDay.getDate(); day++) { const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'); const dateObj = new Date(year, month, day); const dayOfWeek = dateObj.getDay(); let classes = "day-cell"; let dots = ""; if(dateStr === todayStr) classes += " today"; if(dayOfWeek === 0 || dayOfWeek === 6) classes += " weekend"; if(allData.feriesMap[dateStr]) classes += " ferie"; if(allData.congesMap[dateStr]) { const cObj = allData.congesMap[dateStr]; let t = (cObj.type || "cp").toLowerCase(); if(t.includes('0.5 cp') || t.includes('0.5 rtt')) { dots = ""; } else { if(t.includes('cp')) t = 'cp'; else if(t.includes('rtt')) t = 'rtt'; else if(t.includes('css')) t = 'css'; else if(t.includes('am')) t = 'am'; else if(t.includes('cex')) t = 'cex'; else if(t.includes('abs')) t = 'abs'; else if(t.includes('jnt')) t = 'mixte'; dots += `<div class="dot ${t}" title="${cObj.type}"></div>`; } } html += `<div class="${classes}" onclick="selectDay('${dateStr}')">${day}<div class="dot-container">${dots}</div></div>`; } html += '</div>'; container.innerHTML = html; }
+  function changeMonth(delta) { currentDate.setDate(1); currentDate.setMonth(currentDate.getMonth() + delta); viewedYear = currentDate.getFullYear(); updateNavArrows(); document.getElementById('year-title').innerText = viewedYear; renderCharts(); checkCPWarning(); renderMonthView(); }
+  function goToMonth(index) { currentDate.setMonth(index); currentDate.setDate(1); viewedYear = currentDate.getFullYear(); setView('month'); updateNavArrows(); document.getElementById('year-title').innerText = viewedYear; renderCharts(); checkCPWarning(); }
+  function renderYearView() { const container = document.getElementById('calendar-container'); const year = viewedYear; const months = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"]; let html = `<div class="calendar-header"><button class="calendar-nav" onclick="changeYearView(-1)">‹</button><h3>${year}</h3><button class="calendar-nav" onclick="changeYearView(1)">›</button></div><div class="year-grid">`; for(let m=0; m<12; m++) { let dotsHtml = ""; if(allData.conges) allData.conges.forEach(c => { if(!c.debut) return; const d = new Date(c.debut + 'T00:00:00'); if(d.getMonth() === m && d.getFullYear() === year) { let t = (c.type || "cp").toLowerCase(); if(t.includes('0.5 cp') || t.includes('0.5 rtt')) return; if(t.includes('cp')) t='cp'; else if(t.includes('rtt')) t='rtt'; dotsHtml += `<div class="dot ${t}" style="display:inline-block; width:8px; height:8px; margin:1px;"></div>`; } }); if(allData.feries) allData.feries.forEach(f => { if(!f.date) return; const d = new Date(f.date + 'T00:00:00'); if(d.getMonth() === m && d.getFullYear() === year) dotsHtml += `<div class="dot" style="display:inline-block; width:8px; height:8px; margin:1px; background:#d32f2f;"></div>`; }); html += `<div class="month-mini" onclick="goToMonth(${m})"><div class="month-name">${months[m]}</div><div class="mini-dots">${dotsHtml || '<span style="color:#eee">-</span>'}</div></div>`; } html += '</div>'; container.innerHTML = html; }
+
+  function setOptMode(mode) { currentOptMode = mode; document.getElementById('mode-auto').style.background = mode === 'auto' ? '#e8f0fe' : '#f0f2f5'; document.getElementById('mode-auto').style.color = mode === 'auto' ? '#1a73e8' : '#666'; document.getElementById('mode-jours').style.background = mode === 'jours' ? '#e8f0fe' : '#f0f2f5'; document.getElementById('mode-jours').style.color = mode === 'jours' ? '#1a73e8' : '#666'; document.getElementById('jours-input-zone').style.display = mode === 'jours' ? 'block' : 'none'; runLocalOptim(); }
+  function runLocalOptim() { if(currentOptMode === 'auto') { renderOptimization(calculateBridgesLocally()); } else { const nb = parseInt(document.getElementById('input-nb-jours').value); if(nb > 0) renderOptimization(calculateNDaysLocally(nb)); else document.getElementById('optList').innerHTML = "<p style='color:#666; text-align:center;'>Entrez un nombre de jours.</p>"; } }
+  function calculateBridgesLocally() { const year = new Date().getFullYear(); const suggestions = []; const feriesDates = Object.keys(localIsFerie); feriesDates.forEach(dStr => { const d = new Date(dStr + 'T00:00:00'); if(d.getFullYear() !== year) return; const day = d.getDay(); const nom = allData.feriesMap[dStr] || "Férié"; if (day === 2) { const pont = new Date(d); pont.setDate(d.getDate() - 1); suggestions.push({ date: formatDateLocal(pont), texte: `Pont ${nom}`, gain: `4j off (${d.toLocaleDateString('fr-FR')})`, feriesCount: 0, rentabilite: 4.0 }); } if (day === 4) { const pont = new Date(d); pont.setDate(d.getDate() + 1); suggestions.push({ date: formatDateLocal(pont), texte: `Pont ${nom}`, gain: `4j off (${d.toLocaleDateString('fr-FR')})`, feriesCount: 0, rentabilite: 4.0 }); } }); return suggestions; }
+  function calculateNDaysLocally(nombreJours) { const today = new Date(); today.setHours(0,0,0,0); const maxDate = new Date(); maxDate.setFullYear(maxDate.getFullYear() + 1); const suggestions = []; let d = new Date(today); while(d <= maxDate) { if (d.getDay() === 0 || d.getDay() === 6) localIsWeekend[formatDateLocal(d)] = true; d.setDate(d.getDate() + 1); } let currentStart = new Date(today); while(currentStart <= maxDate) { const startStr = formatDateLocal(currentStart); if (!localIsWeekend[startStr] && !localIsFerie[startStr] && !localIsConge[startStr]) { let spent = 0; let cursor = new Date(currentStart); let endOfPeriod = new Date(currentStart); while(spent < nombreJours && cursor <= maxDate) { const cStr = formatDateLocal(cursor); if(!localIsWeekend[cStr] && !localIsFerie[cStr] && !localIsConge[cStr]) { spent++; if(spent === nombreJours) endOfPeriod = new Date(cursor); } if(spent < nombreJours) cursor.setDate(cursor.getDate() + 1); } if(spent === nombreJours) { let offBefore = 0, offAfter = 0, feriesInPeriod = 0; let checkB = new Date(currentStart); checkB.setDate(checkB.getDate() - 1); while(localIsWeekend[formatDateLocal(checkB)] || localIsFerie[formatDateLocal(checkB)] || localIsConge[formatDateLocal(checkB)]) { offBefore++; if(localIsFerie[formatDateLocal(checkB)]) feriesInPeriod++; checkB.setDate(checkB.getDate() - 1); } let checkA = new Date(endOfPeriod); checkA.setDate(checkA.getDate() + 1); while(localIsWeekend[formatDateLocal(checkA)] || localIsFerie[formatDateLocal(checkA)] || localIsConge[formatDateLocal(checkA)]) { offAfter++; if(localIsFerie[formatDateLocal(checkA)]) feriesInPeriod++; checkA.setDate(checkA.getDate() + 1); } const dureeTotale = offBefore + nombreJours + offAfter; const rentabilite = (dureeTotale / nombreJours); const seuil = nombreJours > 5 ? 1.1 : 1.5; if(rentabilite >= seuil) { suggestions.push({ date: formatDateLocal(currentStart), endDate: formatDateLocal(endOfPeriod), texte: `Poser ${nombreJours}j du ${currentStart.toLocaleDateString('fr-FR')} au ${endOfPeriod.toLocaleDateString('fr-FR')}`, gain: `${dureeTotale} jours de repos total`, feriesCount: feriesInPeriod, rentabilite: parseFloat(rentabilite.toFixed(2)) }); } } } currentStart.setDate(currentStart.getDate() + 1); } suggestions.sort((a, b) => b.rentabilite - a.rentabilite); return suggestions.slice(0, 5); }
+  function formatDateLocal(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function renderOptimization(suggestions) { const container = document.getElementById('optList'); if(!suggestions || suggestions.length === 0) { container.innerHTML = "<p style='text-align:center; color:#666;'>Aucune suggestion.</p>"; return; } container.innerHTML = suggestions.map(s => { const d = new Date(s.date + 'T00:00:00'); let txt = s.texte; if(s.endDate && s.date !== s.endDate) { const dEnd = new Date(s.endDate + 'T00:00:00'); txt = `Du ${d.toLocaleDateString('fr-FR')} au ${dEnd.toLocaleDateString('fr-FR')}`; } let rentInt = Math.floor(s.rentabilite || 0); let note = (rentInt - 1.5) * (5 - 1) / (4.0 - 1.5) + 1; note = Math.min(5, Math.max(1, Math.round(note))); let starsHtml = '<span class="stars">' + '★'.repeat(note) + '☆'.repeat(5 - note) + '</span>'; let feriesTxt = ""; if(s.feriesCount && s.feriesCount > 0) feriesTxt = ` <span style="color:#d32f2f; font-weight:bold;">(dont ${s.feriesCount} férié${s.feriesCount>1?'s':''})</span>`; return `<div class="card" style="text-align:left; margin-bottom:10px; background:white; padding:15px; border-radius:12px;"><div style="display:flex; justify-content:space-between; align-items:center;"><div style="font-size:14px; font-weight:bold; color:#1a73e8;">📅 ${txt}</div><div>${starsHtml}</div></div><div style="font-size:12px; margin-top:5px; color:#666;">${s.gain}${feriesTxt}</div><button class="btn-opt" style="margin-top:10px; padding:8px; font-size:14px" onclick="setDateAndOpen('${s.date}', '${s.endDate || s.date}')">Poser</button></div>`; }).join(''); }
+
+  function selectDay(dateStr) { const existingConge = allData.congesMap[dateStr]; if (existingConge) openEditMode(existingConge); else { setDateAndOpen(dateStr, dateStr); openAddMode(); } }
+  function updateDateDisplay() { const d1 = document.getElementById('dateInput').value; const d2 = document.getElementById('endDateInput').value; if(d1) { const dObj = new Date(d1 + 'T00:00:00'); let txt = dObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }); if(d2 && d1 !== d2) { const dObj2 = new Date(d2 + 'T00:00:00'); txt += " au " + dObj2.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }); } document.getElementById('date-summary').innerText = txt; } }
+  function openAddMode() { resetModalState(); document.getElementById('modal-title').innerText = "Poser un congé"; document.getElementById('add-view').style.display = 'grid'; document.getElementById('edit-view').style.display = 'none'; document.getElementById('edit-info-box').style.display = 'none'; if(!document.getElementById('dateInput').value) { const today = new Date(); const tStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0'); document.getElementById('dateInput').value = tStr; document.getElementById('endDateInput').value = tStr; } updateDateDisplay(); document.getElementById('addModal').style.display = 'flex'; }
+  function openEditMode(leaveObj) { resetModalState(); document.getElementById('dateInput').value = leaveObj.debut; document.getElementById('endDateInput').value = leaveObj.fin || leaveObj.debut; updateDateDisplay(); document.getElementById('edit-type-display').innerText = leaveObj.type; document.getElementById('editIdInput').value = leaveObj.id; document.getElementById('modal-title').innerText = "Gérer ce congé"; document.getElementById('edit-info-box').style.display = 'block'; document.getElementById('add-view').style.display = 'none'; document.getElementById('edit-view').style.display = 'flex'; document.getElementById('addModal').style.display = 'flex'; }
+  function showModifyOptions() { document.getElementById('edit-view').style.display = 'none'; document.getElementById('add-view').style.display = 'grid'; }
+  function resetModalState() { document.getElementById('editIdInput').value = ""; document.getElementById('add-view').style.display = 'none'; document.getElementById('edit-view').style.display = 'none'; const btns = document.querySelectorAll('.btn-type'); btns.forEach(b => { b.disabled = false; if(b.innerText.includes("✓")) b.innerText = b.innerText.replace("✓ ", ""); }); }
+  function setDateAndOpen(dateStr, endDateStr) { document.getElementById('dateInput').value = dateStr; document.getElementById('endDateInput').value = endDateStr; openAddMode(); }
+  function closeModal() { document.getElementById('addModal').style.display = 'none'; }
+  function deleteConge() { const id = document.getElementById('editIdInput').value; if(!id) return; if(confirm("Supprimer ce congé ?")) { google.script.run.withSuccessHandler(function(result) { if(result === "Succès") { loadAllData(); closeModal(); } else alert(result); }).supprimerConge(id); } }
+  function saveConge(type) { const dateVal = document.getElementById('dateInput').value; const endVal = document.getElementById('endDateInput').value; const existingId = document.getElementById('editIdInput').value; const btn = event.currentTarget; const originalText = btn.innerText; btn.innerText = "..."; btn.disabled = true; let step1 = Promise.resolve("Succès"); if (existingId) { step1 = new Promise((resolve, reject) => { google.script.run.withSuccessHandler(r => resolve(r)).withFailureHandler(e => reject(e)).supprimerConge(existingId); }); } step1.then(() => { return new Promise((resolve, reject) => { google.script.run.withSuccessHandler(r => resolve(r)).withFailureHandler(e => reject(e)).ajouterConge(dateVal, type, endVal); }); }).then(() => { btn.innerText = "✓ Enregistré !"; btn.classList.add('success'); setTimeout(() => { loadAllData(); closeModal(); btn.innerText = originalText; btn.disabled = false; btn.classList.remove('success'); }, 600); }).catch(err => { alert("Erreur : " + err); btn.innerText = originalText; btn.disabled = false; }); }
+
+  function openSettingsModal() { document.getElementById('input-cp-acquis').value = allData.cp ? allData.cp.acquis : 25; document.getElementById('input-rtt-acquis').value = allData.rtt ? allData.rtt.acquis : 9; document.getElementById('settingsModal').style.display = 'flex'; }
+  function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
+  function saveSettings() { const cpVal = parseFloat(document.getElementById('input-cp-acquis').value); const rttVal = parseFloat(document.getElementById('input-rtt-acquis').value); if(isNaN(cpVal) || isNaN(rttVal)) { alert("Veuillez entrer des nombres valides."); return; } const btn = event.currentTarget; const originalText = btn.innerText; btn.innerText = "Sauvegarde..."; btn.disabled = true; google.script.run.withSuccessHandler(function(result) { if(result === "Succès") { btn.innerText = "✓ Sauvegardé !"; setTimeout(() => { loadAllData(); closeSettingsModal(); btn.innerText = originalText; btn.disabled = false; }, 500); } else { alert(result); btn.innerText = originalText; btn.disabled = false; } }).updateSoldesManuel(cpVal, rttVal); }
+  function showPage(page) { document.getElementById('page-home').style.display = page === 'home' ? 'block' : 'none'; document.getElementById('page-opt').style.display = page === 'opt' ? 'block' : 'none'; document.querySelectorAll('.tab-btn').forEach((btn, index) => { btn.classList.toggle('active', (page === 'home' && index === 0) || (page === 'opt' && index === 1)); }); }
+</script>
+</body>
+</html>
